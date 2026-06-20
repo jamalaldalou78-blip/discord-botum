@@ -1,12 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nobete-birak')
-        .setDescription('Nöbetçi müzik odasına 7/24 kesintisiz canlı yayın yayını başlatır.')
+        .setDescription('Nöbetçi müzik odasına 7/24 kesintisiz canlı yayın başlatır.')
         .addChannelOption(option =>
             option.setName('kanal')
                 .setDescription('Botun giriş yapacağı ses kanalını seçin kanka.')
+                // SADECE ses kanallarının seçilebilmesini zorunlu kılıyoruz:
+                .addChannelTypes(ChannelType.GuildVoice) 
                 .setRequired(true)
         )
         .addIntegerOption(option =>
@@ -16,23 +18,17 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // İlk iş olarak Discord etkileşim süresini uzatıyoruz, böylece "Uygulama yanıt vermedi" hatası tarih oluyor.
+        // Discord'un 3 saniye kuralına takılmamak için süreyi uzatıyoruz (Uygulama yanıt vermedi hatasını önler)
         await interaction.deferReply({ ephemeral: false });
 
         const sesKanali = interaction.options.getChannel('kanal');
         const sureSaat = interaction.options.getInteger('saat');
 
-        // Seçilen kanalın gerçekten bir ses kanalı olup olmadığını kontrol ediyoruz
-        if (!sesKanali.isVoiceBased()) {
-            return interaction.editReply({ content: '❌ Lütfen geçerli bir **ses kanalı** seç kanka!' });
-        }
-
-        // Arka planda çalacak ve asla telif/çökme sorunu yaratmayacak, doğrudan taranabilir garanti bir müzik linki
-        // DisTube bazen düz arama kelimelerinde hata verebildiği için buraya doğrudan çalışan bir URL koyuyoruz
+        // Arka planda çalacak garanti ve kesintisiz müzik linki (7/24 Radyo)
         const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
-            // DisTube motorunu tetikliyoruz ve ses kanalına gönderiyoruz
+            // DisTube motorunu tetikliyoruz ve direkt linki veriyoruz
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
@@ -63,5 +59,3 @@ module.exports = {
         }
     }
 };
-// tes
-
