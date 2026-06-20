@@ -35,7 +35,7 @@ client.distube = new DisTube(client, {
 // --- KOMUT YÜKLEME ---
 const restCommands = [];
 
-const commandsPath = path.join(__dirname, 'commands');
+const prefixCommandsPath = path.join(__dirname, 'commands', 'prefix');
 for (const folder of fs.readdirSync(commandsPath)) {
     if (folder === 'prefix') continue; 
     
