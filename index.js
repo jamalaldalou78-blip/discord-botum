@@ -27,14 +27,15 @@ client.games = new Collection();
 client.distube = new DisTube(client, {
     plugins: [ new SpotifyPlugin(), new SoundCloudPlugin() ],
     emitNewSongOnly: true,
-    nsfw: true
+    nsfw: true,
+    leaveOnEmpty: true, // Odada kimse kalmazsa çıkar
+    leaveOnFinish: false // Nöbet sistemi için listeyi korur
 });
 
 // --- KOMUT YÜKLEME ---
 const restCommands = [];
 
-// 1. Klasörleri Tara (Slash komutları için)
-const commandsPath = path.join(__dirname, 'commands');
+const prefixCommandsPath = path.join(__dirname, 'commands', 'prefix');
 for (const folder of fs.readdirSync(commandsPath)) {
     if (folder === 'prefix') continue; 
     
@@ -50,7 +51,6 @@ for (const folder of fs.readdirSync(commandsPath)) {
     }
 }
 
-// 2. Prefix Komutları (commands/prefix klasörü)
 const prefixPath = path.join(__dirname, 'commands/prefix');
 if (fs.existsSync(prefixPath)) {
     for (const file of fs.readdirSync(prefixPath).filter(f => f.endsWith('.js'))) {
@@ -96,25 +96,23 @@ client.on('interactionCreate', async interaction => {
             
             if (selected === 'mod') {
                 embed.setTitle('🛡️ Moderasyon Komutları')
-                     .setDescription('`w!ban` - Yasaklar.\n`w!kick` - Atar.\n`w!sil` - Temizler.\n`w!timeout` - Susturur.');
+                    .setDescription('`w!ban` - Yasaklar.\n`w!kick` - Atar.\n`w!sil` - Temizler.\n`w!timeout` - Susturur.');
             } else if (selected === 'eglence') {
                 embed.setTitle('🎉 Eğlence Komutları')
-                     .setDescription('`w!avatar` - Profil resmi.\n`w!yazı-tura` - Yazı tura atar.');
+                    .setDescription('`w!avatar` - Profil resmi.\n`w!yazı-tura` - Yazı tura atar.');
             } else if (selected === 'ekonomi') {
                 embed.setTitle('💰 Ekonomi Komutları')
-                     .setDescription('Çok yakında!');
+                    .setDescription('Çok yakında!');
             }
             await interaction.update({ embeds: [embed] }).catch(console.error);
         }
     }
 });
 
-// --- PREFIX SİSTEMİ (GELİŞMİŞ VE TEŞHİS LOGLU HALE GETİRİLDİ) ---
+// --- PREFIX SİSTEMİ ---
 client.on('messageCreate', async message => {
-    // Büyük W! veya küçük w! fark etmeksizin sistemi tetikler kanka
     if (message.author.bot || !message.content.toLowerCase().startsWith('w!')) return;
 
-    // Mesajın ulaşıp ulaşmadığını test etmek için konsola log basar
     console.log(`📩 [Wolf Mesaj Algıladı]: ${message.content}`);
 
     const args = message.content.slice(2).trim().split(/ +/);
@@ -122,42 +120,39 @@ client.on('messageCreate', async message => {
     
     console.log(`🔍 [Aranan Komut]: ${commandName}`);
 
-    // Hem ana ismi hem de aliases (kısaltmaları) tarar
     const command = client.prefixCommands.get(commandName) || 
                     client.prefixCommands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
     
     if (!command) {
-        console.log(`❌ [Hata]: "w!${commandName}" adında bir prefix komut dosyası sistemde bulunamadı!`);
+        console.log(`❌ [Hata]: "w!${commandName}" komutu bulunamadı!`);
         return;
     }
 
     try { 
-        console.log(`🚀 [Çalıştırılıyor]: ${command.name}.js dosyası tetiklendi!`);
+        console.log(`🚀 [Çalıştırılıyor]: ${command.name}.js`);
         await command.execute(message, args); 
     } 
     catch (e) { 
-        console.error('💥 Komut çalıştırma hatası:', e); 
+        console.error('💥 Komut hatası:', e); 
         message.reply('Komut çalıştırılırken bir hata oluştu!'); 
     }
 });
 
 // =========================================================
-// --- WOLF MÜZİK SİSTEMİ (İNTERAKTİF PLAYER VE ETKİNLİKLER)
+// --- WOLF MÜZİK SİSTEMİ (ÇÖKMEYE KARŞI KORUMALI) ---
 // =========================================================
 
 const olumluEmoji = "<a:wolfonay:1517197503345328430>";
 const olumsuzEmoji = "<a:wolfhayir:1517203345385984150>";
 
-// --- ETKİNLİK 1: ŞARKI SIRAYA EKLENDİĞİNDE ---
 client.distube.on('addSong', (queue, song) => {
     const siraNumarasi = queue.songs.length;
-
     const addSongEmbed = new EmbedBuilder()
         .setColor('#2b2d31')
         .setTitle(`📥 Sıraya Eklendi - #${siraNumarasi}`)
         .setDescription(`**[${song.name}](${song.url})**`)
         .addFields(
-            { name: '⏳ Süre', value: `\`${song.formattedDuration}\``, inline: true },
+            { name: '⏳ Süre', value: `\`${song.isLive ? '🔴 CANLI' : song.formattedDuration}\``, inline: true },
             { name: '👤 İsteyen', value: `${song.user}`, inline: true }
         )
         .setThumbnail(song.thumbnail)
@@ -166,14 +161,13 @@ client.distube.on('addSong', (queue, song) => {
     queue.textChannel.send({ embeds: [addSongEmbed] });
 });
 
-// --- ETKİNLİK 2: ŞARKI OYNATILMAYA BAŞLANDIĞINDA (BUTONLU PLAYER) ---
 client.distube.on('playSong', (queue, song) => {
     const playerEmbed = new EmbedBuilder()
         .setColor('#5865F2')
         .setTitle('🎵 Şu Anda Oynatılıyor')
         .setDescription(`**[${song.name}](${song.url})**`)
         .addFields(
-            { name: '⏳ Süre', value: `\`${song.formattedDuration}\``, inline: true },
+            { name: '⏳ Süre', value: `\`${song.isLive ? '🔴 CANLI YAYIN' : song.formattedDuration}\``, inline: true },
             { name: '👤 İsteyen', value: `${song.user}`, inline: true },
             { name: '🌀 Döngü', value: queue.repeatMode === 1 ? '`Tekrar Açık` 🔁' : '`Kapalı` ❌', inline: true }
         )
@@ -188,12 +182,13 @@ client.distube.on('playSong', (queue, song) => {
     );
 
     queue.textChannel.send({ embeds: [playerEmbed], components: [buttons] }).then(msg => {
-        const collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: song.duration * 1000 });
+        // Canlı yayınsa (isLive) butonları sınırsız açık tut, normal şarkıysa şarkı süresi kadar tut
+        const zamanAsimi = song.isLive ? 86400000 : song.duration * 1000; 
+        const collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: zamanAsimi });
 
         collector.on('collect', async interaction => {
             await interaction.deferUpdate().catch(() => {});
 
-            // DURDUR / DEVAM
             if (interaction.customId === 'player_pause') {
                 if (queue.paused) {
                     queue.resume();
@@ -204,7 +199,6 @@ client.distube.on('playSong', (queue, song) => {
                 }
             }
 
-            // GEÇ (SKIP)
             if (interaction.customId === 'player_skip') {
                 if (queue.songs.length > 1) {
                     queue.skip();
@@ -214,7 +208,6 @@ client.distube.on('playSong', (queue, song) => {
                 }
             }
 
-            // LOOP (SONSUZ TEKRAR)
             if (interaction.customId === 'player_loop') {
                 if (queue.repeatMode === 1) {
                     queue.setRepeatMode(0);
@@ -225,7 +218,6 @@ client.distube.on('playSong', (queue, song) => {
                 }
             }
 
-            // KAPAT (STOP)
             if (interaction.customId === 'player_stop') {
                 queue.stop();
                 queue.textChannel.send(`${olumsuzEmoji} Müzik kapatıldı, Wolf kanaldan ayrılıyor.`).then(m => setTimeout(() => m.delete().catch(()=>{}), 4000));
@@ -238,6 +230,24 @@ client.distube.on('playSong', (queue, song) => {
             msg.edit({ components: [buttons] }).catch(() => {});
         });
     });
+});
+
+// --- YENİ EKLENEN HAYAT KURTARICI OLAYLAR (EVENTS) ---
+
+// Hata Yakalayıcı: Botun tamamen çökmesini engeller
+client.distube.on('error', (channel, error) => {
+    console.error('💥 [KORUMA] DisTube Hatası Engellendi:', error);
+    if (channel) channel.send(`❌ Müzik motorunda anlık bir sorun oluştu, yayın bağlantısı koptu kanka.`).catch(() => {});
+});
+
+// Odada kimse kalmadığında çalışır (Sistemi yormaz)
+client.distube.on('empty', queue => {
+    queue.textChannel.send('👋 Odada kimse kalmadı, Wolf enerji tasarrufu için yayını kapatıp çıkıyor.').catch(() => {});
+});
+
+// Şarkı listesi tamamen bittiğinde çalışır
+client.distube.on('finish', queue => {
+    queue.textChannel.send('🎵 Çalma listesinin sonuna geldik, benden bu kadar!').catch(() => {});
 });
 
 client.login(process.env.DISCORD_TOKEN || config.token);
