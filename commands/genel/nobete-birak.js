@@ -22,8 +22,8 @@ module.exports = {
         const sesKanali = interaction.options.getChannel('kanal');
         const sureSaat = interaction.options.getInteger('saat');
 
-        // %100 sorunsuz ve telifsiz direkt canlı radyo akış IP'si (YouTube kısıtlamalarına takılmaz)
-        const garantiMuzikLink = "http://46.20.3.201:8030/;stream.mp3"; 
+        // Render'da timeout yemeyen, garanti 7/24 YouTube canlı yayın linki
+        const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
@@ -38,7 +38,7 @@ module.exports = {
                 .setDescription(`Bot başarıyla <#${sesKanali.id}> odasına giriş yaptı ve nöbet yayını başlatıldı!`)
                 .addFields(
                     { name: '⏳ Planlanan Süre', value: `\`${sureSaat} Saat\``, inline: true },
-                    { name: '🎵 Yayın Türü', value: '`7/24 Kesintisiz Radyo` 📻', inline: true }
+                    { name: '🎵 Yayın Türü', value: '`7/24 Kesintisiz Lofi Radyo` 📻', inline: true }
                 )
                 .setFooter({ text: 'Wolf Nöbet Modu • Sistem tıkır tıkır işliyor.' })
                 .setTimestamp();
