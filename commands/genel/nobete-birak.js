@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Nobetci muzik odasina 7/24 kesintisiz canli yayin baslatir.')
         .addChannelOption(option =>
             option.setName('kanal')
-                .setDescription('Botun giris yapacagi ses kanalini secin kanka.')
+                .setDescription('Botun giris yapacagi ses kanalini secin.')
                 .addChannelTypes(ChannelType.GuildVoice) 
                 .setRequired(true)
         )
@@ -17,16 +17,13 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // Hata almamak için öncelikli yanıt veriyoruz
         await interaction.deferReply({ ephemeral: false });
 
         const sesKanali = interaction.options.getChannel('kanal');
-        
-        // Render gibi sunucularda patlamayan, garanti canlı yayın linki
+        // Render gibi kısıtlı sunucularda radyo IP'leri yerine YouTube canlı yayın linki daha kararlıdır
         const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
-            // DisTube üzerinden yayını başlat
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
@@ -37,14 +34,14 @@ module.exports = {
                 .setColor('#2b2d31')
                 .setTitle('🛡️ Nöbet Sistemi Aktif Edildi!')
                 .setDescription(`Bot <#${sesKanali.id}> kanalına giriş yaptı ve nöbet yayını başlatıldı!`)
-                .setFooter({ text: 'Wolf Nöbet Modu • Sistem tıkır tıkır işliyor.' });
+                .setFooter({ text: 'Wolf Nöbet Modu' });
 
             return interaction.editReply({ embeds: [nobetEmbed] });
 
         } catch (error) {
             console.error("💥 Kritik Hata:", error);
             return interaction.editReply({ 
-                content: `❌ **Yayın başlatılamadı!**\n> **Hata:** \`${error.message}\`\n\nBotun ses kanalına girme ve konuşma yetkisi olduğundan emin ol kanka.` 
+                content: `❌ **Yayın başlatılamadı!**\n> **Hata:** \`${error.message}\`\n\nBotun ses kanalına katılma yetkisini kontrol et.` 
             });
         }
     }
