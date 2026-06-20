@@ -22,18 +22,16 @@ module.exports = {
         const sesKanali = interaction.options.getChannel('kanal');
         const sureSaat = interaction.options.getInteger('saat');
 
-        // Garanti müzik veya doğrudan radyo akış linki (YouTube sıkıntı çıkarırsa buraya direkt radyo stream .mp3/.m3u8 linki de koyabilirsin)
-        const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
+        // %100 sorunsuz ve telifsiz direkt canlı radyo akış IP'si (YouTube kısıtlamalarına takılmaz)
+        const garantiMuzikLink = "http://46.20.3.201:8030/;stream.mp3"; 
 
         try {
-            // DisTube üzerinden ses kanalında çalmayı başlatıyoruz
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
                 interaction: interaction
             });
 
-            // Başarılı embed mesajı
             const nobetEmbed = new EmbedBuilder()
                 .setColor('#2b2d31')
                 .setTitle('🛡️ Nöbet Sistemi Aktif Edildi!')
