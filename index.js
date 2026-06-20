@@ -27,15 +27,13 @@ client.games = new Collection();
 client.distube = new DisTube(client, {
     plugins: [ new SpotifyPlugin(), new SoundCloudPlugin() ],
     emitNewSongOnly: true,
-    nsfw: true,
-    leaveOnEmpty: true, // Odada kimse kalmazsa çıkar
-    leaveOnFinish: false // Nöbet sistemi için listeyi korur
+    nsfw: true
 });
 
 // --- KOMUT YÜKLEME ---
 const restCommands = [];
 
-const prefixCommandsPath = path.join(__dirname, 'commands', 'prefix');
+const commandsPath = path.join(__dirname, 'commands');
 for (const folder of fs.readdirSync(commandsPath)) {
     if (folder === 'prefix') continue; 
     
@@ -51,10 +49,10 @@ for (const folder of fs.readdirSync(commandsPath)) {
     }
 }
 
-const prefixPath = path.join(__dirname, 'commands/prefix');
-if (fs.existsSync(prefixPath)) {
-    for (const file of fs.readdirSync(prefixPath).filter(f => f.endsWith('.js'))) {
-        const command = require(path.join(prefixPath, file));
+const prefixCommandsPath = path.join(__dirname, 'commands', 'prefix');
+if (fs.existsSync(prefixCommandsPath)) {
+    for (const file of fs.readdirSync(prefixCommandsPath).filter(f => f.endsWith('.js'))) {
+        const command = require(path.join(prefixCommandsPath, file));
         if (command.name && command.execute) client.prefixCommands.set(command.name, command);
     }
 }
@@ -129,8 +127,8 @@ client.on('messageCreate', async message => {
     }
 
     try { 
-        console.log(`🚀 [Çalıştırılıyor]: ${command.name}.js`);
-        await command.execute(message, args); 
+        console.log(`🚀 [Çalıştırılıyor]: ${command.name || commandName}.js`);
+        await command.execute(message, args, client); 
     } 
     catch (e) { 
         console.error('💥 Komut hatası:', e); 
