@@ -3,39 +3,37 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nobete-birak')
-        .setDescription('Nöbetçi müzik odasına 7/24 kesintisiz canlı yayın başlatır.')
+        .setDescription('Nobetci muzik odasina 7/24 kesintisiz canli yayin baslatir.')
         .addChannelOption(option =>
             option.setName('kanal')
-                .setDescription('Botun giriş yapacağı ses kanalını seçin kanka.')
-                // SADECE ses kanallarının seçilebilmesini zorunlu kılıyoruz:
+                .setDescription('Botun giris yapacagi ses kanalini secin kanka.')
                 .addChannelTypes(ChannelType.GuildVoice) 
                 .setRequired(true)
         )
         .addIntegerOption(option =>
             option.setName('saat')
-                .setDescription('Yayının kaç saat süreceğini belirtin.')
+                .setDescription('Yayinin kac saat surecegini belirtin.')
                 .setRequired(true)
         ),
 
     async execute(interaction) {
-        // Discord'un 3 saniye kuralına takılmamak için süreyi uzatıyoruz (Uygulama yanıt vermedi hatasını önler)
         await interaction.deferReply({ ephemeral: false });
 
         const sesKanali = interaction.options.getChannel('kanal');
         const sureSaat = interaction.options.getInteger('saat');
 
-        // Arka planda çalacak garanti ve kesintisiz müzik linki (7/24 Radyo)
+        // Garanti müzik veya doğrudan radyo akış linki (YouTube sıkıntı çıkarırsa buraya direkt radyo stream .mp3/.m3u8 linki de koyabilirsin)
         const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
-            // DisTube motorunu tetikliyoruz ve direkt linki veriyoruz
+            // DisTube üzerinden ses kanalında çalmayı başlatıyoruz
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
                 interaction: interaction
             });
 
-            // Başarılı olursa kanala şık bir embed gönderiyoruz
+            // Başarılı embed mesajı
             const nobetEmbed = new EmbedBuilder()
                 .setColor('#2b2d31')
                 .setTitle('🛡️ Nöbet Sistemi Aktif Edildi!')
@@ -52,9 +50,8 @@ module.exports = {
         } catch (error) {
             console.error("💥 Nöbet komutunda kritik hata oluştu:", error);
             
-            // Kullanıcıya hatanın detayını kibarca bildiren sistem
             return interaction.editReply({ 
-                content: `❌ **Müzik motoru başlatılırken bir sorun oluştu!**\n> **Hata Detayı:** \`${error.message || error}\`\n\nLütfen botun ses kanalına girme ve konuşma yetkilerinin tam olduğunu kontrol et kanka.` 
+                content: `❌ **Müzik motoru başlatılırken bir sorun oluştu!**\n> **Hata Detayı:** \`${error.message || error}\`\n\nLütfen botun ses kanalına girme yetkilerini kontrol et kanka.` 
             });
         }
     }
