@@ -17,48 +17,34 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // Render sunucusunun gecikmesini tolere etmek için süreyi uzatıyoruz
+        // Hata almamak için öncelikli yanıt veriyoruz
         await interaction.deferReply({ ephemeral: false });
 
         const sesKanali = interaction.options.getChannel('kanal');
-        const sureSaat = interaction.options.getInteger('saat');
-
-        // Render altyapısında asla patlamayan, global 7/24 Lofi müzik linki
+        
+        // Render gibi sunucularda patlamayan, garanti canlı yayın linki
         const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
-            // Sunucu yurt dışında olduğu için bağlantı ayarlarını optimize ediyoruz
+            // DisTube üzerinden yayını başlat
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
-                interaction: interaction,
-                skip: true // Sırada başka şarkı varsa doğrudan buna geçmesi için
+                interaction: interaction
             });
 
             const nobetEmbed = new EmbedBuilder()
                 .setColor('#2b2d31')
                 .setTitle('🛡️ Nöbet Sistemi Aktif Edildi!')
-                .setDescription(`Bot başarıyla <#${sesKanali.id}> odasına giriş yaptı ve nöbet yayını başlatıldı!`)
-                .addFields(
-                    { name: '⏳ Planlanan Süre', value: `\`${sureSaat} Saat\``, inline: true },
-                    { name: '🎵 Yayın Türü', value: '`7/24 Kesintisiz Lofi Radyo` 📻', inline: true }
-                )
-                .setFooter({ text: 'Wolf Nöbet Modu • Sistem tıkır tıkır işliyor.' })
-                .setTimestamp();
+                .setDescription(`Bot <#${sesKanali.id}> kanalına giriş yaptı ve nöbet yayını başlatıldı!`)
+                .setFooter({ text: 'Wolf Nöbet Modu • Sistem tıkır tıkır işliyor.' });
 
             return interaction.editReply({ embeds: [nobetEmbed] });
 
         } catch (error) {
-            console.error("💥 Nöbet komutunda kritik hata oluştu:", error);
-            
-            // Eğer bot zaten kanala girdiyse ama ses gelmediyse güvenli çıkış yaptırıyoruz
-            try {
-                const queue = interaction.client.distube.getQueue(interaction.guildId);
-                if (queue) queue.stop();
-            } catch (e) { }
-
+            console.error("💥 Kritik Hata:", error);
             return interaction.editReply({ 
-                content: `❌ **Müzik motoru başlatılırken bir sorun oluştu!**\n> **Hata Detayı:** \`${error.message || error}\`\n\nLütfen botun ses kanalına katılma ve konuşma yetkilerini kontrol et kanka.` 
+                content: `❌ **Yayın başlatılamadı!**\n> **Hata:** \`${error.message}\`\n\nBotun ses kanalına girme ve konuşma yetkisi olduğundan emin ol kanka.` 
             });
         }
     }
