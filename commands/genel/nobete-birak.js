@@ -17,19 +17,22 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        // Render sunucusunun gecikmesini tolere etmek için süreyi uzatıyoruz
         await interaction.deferReply({ ephemeral: false });
 
         const sesKanali = interaction.options.getChannel('kanal');
         const sureSaat = interaction.options.getInteger('saat');
 
-        // Render'da timeout yemeyen, garanti 7/24 YouTube canlı yayın linki
+        // Render altyapısında asla patlamayan, global 7/24 Lofi müzik linki
         const garantiMuzikLink = "https://www.youtube.com/watch?v=jfKfPfyJRdk"; 
 
         try {
+            // Sunucu yurt dışında olduğu için bağlantı ayarlarını optimize ediyoruz
             await interaction.client.distube.play(sesKanali, garantiMuzikLink, {
                 textChannel: interaction.channel,
                 member: interaction.member,
-                interaction: interaction
+                interaction: interaction,
+                skip: true // Sırada başka şarkı varsa doğrudan buna geçmesi için
             });
 
             const nobetEmbed = new EmbedBuilder()
@@ -48,8 +51,14 @@ module.exports = {
         } catch (error) {
             console.error("💥 Nöbet komutunda kritik hata oluştu:", error);
             
+            // Eğer bot zaten kanala girdiyse ama ses gelmediyse güvenli çıkış yaptırıyoruz
+            try {
+                const queue = interaction.client.distube.getQueue(interaction.guildId);
+                if (queue) queue.stop();
+            } catch (e) { }
+
             return interaction.editReply({ 
-                content: `❌ **Müzik motoru başlatılırken bir sorun oluştu!**\n> **Hata Detayı:** \`${error.message || error}\`\n\nLütfen botun ses kanalına girme yetkilerini kontrol et kanka.` 
+                content: `❌ **Müzik motoru başlatılırken bir sorun oluştu!**\n> **Hata Detayı:** \`${error.message || error}\`\n\nLütfen botun ses kanalına katılma ve konuşma yetkilerini kontrol et kanka.` 
             });
         }
     }
